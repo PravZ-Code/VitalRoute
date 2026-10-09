@@ -58,29 +58,30 @@ It directs the ambulance to the hospital where the patient will **actually recei
 
 ---
 
-## 🔬 Novelty & Competitive Benchmark (First-of-its-Kind Solution)
+## 🔬 Literature Context & Architectural Differentiators
 
-While **ambulance offload delays (ramping)** and **emergency department overcrowding** are well-documented healthcare crises worldwide, existing systems (traditional Computer-Aided Dispatch, regional divert portals like EMResource, and generic mapping apps) only treat surface symptoms or route ambulances purely by physical road distance.
+While emergency department capacity forecasting and ambulance dispatch optimization are established fields of research (e.g., *BMC Health Services Research*, 2024; *Heliyon*, 2026) and operational systems like ReddiNet provide regional status reporting, VitalRoute addresses critical real-world implementation gaps. 
 
-**VitalRoute is the first platform to systematically unify telemetry freshness decay, multi-factor clinical readiness, offline Bayesian forecasting, and two-way pre-arrival bay reservations into a single cohesive architecture:**
+Rather than relying on continuous high-bandwidth cloud connectivity or assuming that reported bed numbers are 100% accurate, VitalRoute integrates clinical urgency, estimated travel time, hospital resource readiness, capacity-data freshness, and pre-arrival coordination into a cohesive, field-ready platform.
 
-| Dimension | Standard GPS / Google Maps | Regional Divert Portals (EMResource, ReddiNet) | **VitalRoute (TEAM RAPS)** |
-| :--- | :--- | :--- | :--- |
-| **Optimization Target** | Driving time ($T_{\text{drive}}$) only | Coarse manual open/divert flags | **Total Time to Definitive Care ($\text{TTDC} = T_{\text{drive}} + T_{\text{offload}} + T_{\text{readiness}}$)** |
-| **"Phantom Bed" Elimination** | ❌ Completely ignored | ⚠️ Manual toggles often stale by 30–90+ minutes | **✅ Mathematical Freshness Decay $F(t) = e^{-\lambda \Delta t}$ with uncertainty penalties** |
-| **Clinical Resource Readiness** | ❌ Unchecked | ⚠️ Static phone registry | **✅ Live specialist tracking (Cath Lab, CT Scanner, on-call vs scrubbed-in)** |
-| **Offline Reliability (Loss of Signal)** | ❌ Stops working | ❌ Cloud-dependent website | **✅ Local Bayesian model forecasting arrival capacity from diurnal rhythms** |
-| **Hospital Pre-Arrival Handshake** | ❌ None (crew arrives unannounced) | ⚠️ Clunky radio/phone calls | **✅ 2-way closed-loop digital handshake reserving ED bays before arrival** |
-| **Clinical Role Separation** | ❌ None | ❌ One-size-fits-all forms | **✅ Paramedic (rapid NEWS2 vitals) vs Hospital Nurse (Anticipated ESI scoring)** |
+### Comparative Technical Analysis
+
+| Dimension | Standard GPS / Google Maps | Regional Divert Portals (e.g. ReddiNet) | Academic Precedents (e.g. BMC 2024) | **VitalRoute (TEAM RAPS)** |
+| :--- | :--- | :--- | :--- | :--- |
+| **Optimization Target** | Travel time ($T_{\text{drive}}$) | Manual binary open/divert flags | Simulated bed availability + distance | **Total Time to Definitive Care ($\text{TTDC} = T_{\text{drive}} + T_{\text{offload}} + T_{\text{readiness}}$)** |
+| **Telemetry Freshness** | ❌ None | ⚠️ Manual toggles (often delayed by 30–90m) | Periodic historical simulation | **✅ Exponential Freshness Decay $F(t) = e^{-\lambda \Delta t}$ with uncertainty penalties** |
+| **Connectivity Resilience** | ❌ Fails without cell data | ❌ Cloud-dependent web app | ❌ Centralized compute server | **✅ Embedded offline Bayesian forecaster with diurnal arrival probability** |
+| **Pre-Arrival Reservation** | ❌ None | ⚠️ Telephone / Radio dispatch | ⚠️ Recommendation without bay locking | **✅ 2-way closed-loop digital handshake with 180s deterministic timeout fallback** |
+| **Field vs Hospital Triage** | ❌ None | ❌ Generic forms | ⚠️ Central dispatcher role | **✅ Role-segregated: Paramedic (NEWS2 vitals) vs Hospital Nurse (Anticipated ESI)** |
 
 ---
 
-## 🌟 Key Innovations
+## 🌟 Core Architectural Differentiators
 
-1. **No "Phantom Beds" (Freshness Decay)**: Hospital bed reports decay exponentially over time ($F(t) = e^{-\lambda \Delta t}$). Outdated numbers are mathematically penalized so ambulances are never routed to hospitals based on stale capacity claims.
-2. **Offline-Ready Probability Forecasting**: If cell towers fail, VitalRoute uses an embedded local mathematical model based on 24-hour diurnal hospital admission rhythms to estimate arrival bed probability.
-3. **Closed-Loop Digital Handshake**: Replaces chaotic phone calls and radio tag with instant digital confirmations. If a hospital suddenly fills up, it triggers an instant diversion *before* the ambulance gets stuck.
-4. **Transparent "Why Inspector"**: Clearly tells the medical crew why a hospital was chosen (e.g. *"Apollo preferred over Max: although 3 min farther by road, Max has a 30-min offload delay; net clinical saving of 27 minutes"*).
+1. **Uncertainty-Aware Capacity Engine**: Instead of treating bed counts as absolute truths, VitalRoute models the probability $P(\text{Beds} \ge 1)$ upon vehicle arrival. Reports decay exponentially ($F(t) = e^{-\lambda \Delta t}$), penalizing stale information to guard against "phantom beds".
+2. **Offline-First Diurnal Forecasting**: When cellular data drops in transport dead zones, VitalRoute switches to an embedded mathematical model based on 24-hour diurnal hospital admission rhythms to provide probabilistic destination guidance.
+3. **Conflict-Safe Digital Handshake Protocol**: Replaces asynchronous telephone tag with a deterministic two-way handshake. Includes a 180-second timeout fallback to prevent decision lock and enables instant hospital diversion before physical arrival.
+4. **Transparent "Why Inspector" (Pillar 4)**: Decomposes clinical factors to explain trade-offs to dispatchers and clinicians (e.g., *"Apollo preferred over Max: although 3 min farther by road, Max has a 30-min offload delay; net clinical saving of 27 minutes"*).
 
 ---
 

@@ -1,7 +1,14 @@
 from pathlib import Path
 import sys
 import pytest
-from PySide6.QtWidgets import QApplication
+
+try:
+    from PySide6.QtWidgets import QApplication
+except ImportError as import_error:
+    QApplication = None
+    PYSIDE_IMPORT_ERROR = import_error
+else:
+    PYSIDE_IMPORT_ERROR = None
 
 SOFTWARE_DIR = Path(__file__).resolve().parent.parent.parent / "software"
 if str(SOFTWARE_DIR) not in sys.path:
@@ -9,12 +16,24 @@ if str(SOFTWARE_DIR) not in sys.path:
 
 try:
     from windows_app.main_window import HospitalMainWindow
-except ImportError:
-    from app.windows_app.main_window import HospitalMainWindow
+except ImportError as import_error:
+    try:
+        from app.windows_app.main_window import HospitalMainWindow
+    except ImportError:
+        HospitalMainWindow = None
+        WINDOWS_APP_IMPORT_ERROR = import_error
+    else:
+        WINDOWS_APP_IMPORT_ERROR = None
+else:
+    WINDOWS_APP_IMPORT_ERROR = None
 
 
 @pytest.fixture(scope="session")
 def qapp():
+    if QApplication is None:
+        pytest.skip(f"PySide6 is unavailable in this environment: {PYSIDE_IMPORT_ERROR}")
+    if HospitalMainWindow is None:
+        pytest.skip(f"Windows app dependencies are unavailable in this environment: {WINDOWS_APP_IMPORT_ERROR}")
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)

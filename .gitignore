@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# PyInstaller / Build
+build/
+dist/
+*.spec
+*.exe
+
+# Database & Runtime State
+*.db
+*.sqlite3
+
+# Logs
+*.log
+vr_*.log
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>VitalRoute Mobile — Paramedic & Driver</title>
+  <link rel="stylesheet" href="/assets/mobile/leaflet.css">
+  <link rel="stylesheet" href="/assets/mobile/mobile.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚑</text></svg>">
+</head>
+<body class="mobile-body">
+  <!-- Top Application Bar -->
+  <header class="app-header">
+    <div class="header-main">
+      <div class="branding">
+        <span class="amb-badge">🚑 <span id="ambIdDisplay">AMB-104</span></span>
+        <h1 class="app-title">VitalRoute <span class="tag-mobile">FIELD</span></h1>
+      </div>
+      <div class="header-status">
+        <button type="button" class="btn-sound-toggle" id="btnSoundToggle" title="Toggle audio alert chimes">
+          <span id="soundIcon">🔔</span>
+        </button>
+        <div class="ws-pill" id="wsIndicator" title="Live connection to regional hospital network">
+          <span class="dot"></span> <span id="wsStatusText">CONNECTING</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strict Role Switcher: Paramedic vs Ambulance Driver -->
+    <nav class="role-nav" aria-label="Role Navigation">
+      <button type="button" class="role-btn active" id="tabParamedic" data-role="paramedic">
+        <span class="role-icon">🩺</span>
+        <div class="role-info">
+          <span class="role-title">Paramedic</span>
+          <span class="role-desc">Enter Patient Details</span>
+        </div>
+      </button>
+      <button type="button" class="role-btn" id="tabDriver" data-role="driver">
+        <span class="role-icon">🧭</span>
+        <div class="role-info">
+          <span class="role-title">Ambulance Driver</span>
+          <span class="role-desc">GPS Location & Route</span>
+        </div>
+        <span class="driver-notif-dot" id="driverAlertDot" style="display: none;"></span>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Notification Banner -->
+  <div class="sync-banner" id="syncBanner" style="display: none;">
+    <span class="sync-banner-icon">⚡</span>
+    <span class="sync-banner-text" id="syncBannerText">Destination calculated and transmitted to Driver GPS!</span>
+    <button type="button" class="sync-banner-btn" id="btnGoToDriver">View Driver GPS ➔</button>
+  </div>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <main class="mobile-content">
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: PARAMEDIC CONSOLE (ONLY FOR ENTERING PATIENT DETAILS)              -->
+    <!-- ========================================================================= -->
+    <section class="role-screen active" id="screenParamedic">
+      <div class="screen-header">
+        <div class="screen-title-group">
+          <span class="role-badge">PARAMEDIC CONSOLE</span>
+          <h2>Patient Intake & Triage</h2>
+        </div>
+        <div class="news2-pill" id="headerNews2Pill">
+          <span class="news2-lbl">NEWS2:</span>
+          <strong class="news2-val" id="news2ScoreVal">0</strong>
+          <span class="risk-badge band-low" id="riskBandBadge">LOW</span>
+        </div>
+      </div>
+
+      <!-- Emergency Situation -->
+      <div class="card field-card">
+        <div class="card-header">
+          <h3>1. Emergency Situation & Type</h3>
+          <span class="card-sub">Predefined + Manual Notes</span>
+        </div>
+
+        <label class="field-label">Predefined Category:</label>
+        <div class="tags-scroller" id="emergencyTagGroup">
+          <button type="button" class="chip active" data-tag="GENERAL">General</button>
+          <button type="button" class="chip chip-critical" data-tag="TRAUMA">Trauma (Bay)</button>
+          <button type="button" class="chip chip-urgent" data-tag="STEMI">STEMI (Cath)</button>
+          <button type="button" class="chip chip-urgent" data-tag="STROKE">Stroke (CT)</button>
+          <button type="button" class="chip chip-warning" data-tag="RESPIRATORY">Respiratory</button>
+          <button type="button" class="chip chip-warning" data-tag="BURNS">Burns Unit</button>
+          <button type="button" class="chip chip-warning" data-tag="SEPSIS">Sepsis</button>
+          <button type="button" class="chip" data-tag="PEDIATRIC">Pediatric</button>
+          <button type="button" class="chip" data-tag="OBSTETRIC">Obstetric</button>
+          <button type="button" class="chip" data-tag="CUSTOM">Custom</button>
+        </div>
+
+        <!-- Manually Typable Emergency Situation -->
+        <div class="manual-input-box">
+          <label for="emergencyDescInput" class="field-label">
+            <span>Manual Situation Description & Observations:</span>
+          </label>
+          <textarea id="emergencyDescInput" rows="2" 
+            placeholder="Type specific emergency details (e.g. 45M driver trapped under semi-truck, crushing injury to chest, cyanotic, active bleeding)..."></textarea>
+          
+          <div class="quick-inserts">
+            <button type="button" class="btn-insert" data-insert="Crush injury / Entrapment">Entrapment</button>
+            <button type="button" class="btn-insert" data-insert="Active arterial bleed">Arterial Bleed</button>
+            <button type="button" class="btn-insert" data-insert="Unresponsive / GCS < 8">Unresponsive</button>
+            <button type="button" class="btn-insert" data-insert="Severe stridor / airway compromise">Airway Stridor</button>
+            <button type="button" class="btn-insert" data-insert="Post-ROSC cardiac arrest">Post-ROSC</button>
+          </div>
+        </div>
+
+        <!-- Paramedic Notes -->
+        <div class="paramedic-notes-box">
+          <label for="paramedicNotesInput" class="field-label">Field Interventions & Clinical Notes:</label>
+          <input type="text" id="paramedicNotesInput" 
+            placeholder="e.g. 15L O2 NRB, 18G IV established, 325mg Aspirin administered, c-spine immobilized">
+          <div class="quick-interventions">
+            <button type="button" class="btn-intervention" data-insert="15L O2 NRB">15L O2</button>
+            <button type="button" class="btn-intervention" data-insert="18G IV Placed">18G IV</button>
+            <button type="button" class="btn-intervention" data-insert="C-Collar / Immobilized">C-Collar</button>
+            <button type="button" class="btn-intervention" data-insert="325mg Aspirin PO">325mg ASA</button>
+            <button type="button" class="btn-intervention" data-insert="1mg Epinephrine IV">1mg Epi</button>
+            <button type="button" class="btn-intervention" data-insert="Defib Pads Attached">Defib Ready</button>
+            <button type="button" class="btn-intervention" data-insert="Needle Thoracostomy">Thoracostomy</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rapid NEWS2 Vitals Entry -->
+      <div class="card field-card">
+        <div class="card-header">
+          <h3>2. Rapid Patient Vitals</h3>
+          <span class="card-sub">Physiological Parameters</span>
+        </div>
+
+        <div class="steppers-grid">
+          <!-- Respiration Rate -->
+          <div class="stepper-item">
+            <span class="vital-label">Resp. Rate <small>(br/min)</small></span>
+            <div class="stepper-controls">
+              <button type="button" class="btn-step" data-stepper="rr" data-delta="-1" aria-label="Decrease Resp Rate">−</button>
+              <span class="stepper-val" id="val_rr">16</span>
+              <button type="button" class="btn-step" data-stepper="rr" data-delta="1" aria-label="Increase Resp Rate">+</button>
+            </div>
+          </div>
+
+          <!-- SpO2 -->
+          <div class="stepper-item">
+            <span class="vital-label">SpO2 <small>(%)</small></span>
+            <div class="stepper-controls">
+              <button type="button" class="btn-step" data-stepper="spo2" data-delta="-1" aria-label="Decrease SpO2">−</button>
+              <span class="stepper-val" id="val_spo2">98</span>
+              <button type="button" class="btn-step" data-stepper="spo2" data-delta="1" aria-label="Increase SpO2">+</button>
+            </div>
+          </div>
+
+          <!-- Systolic BP -->
+          <div class="stepper-item">
+            <span class="vital-label">Systolic BP <small>(mmHg)</small></span>
+            <div class="stepper-controls">
+              <button type="button" class="btn-step" data-stepper="sbp" data-delta="-5" aria-label="Decrease Systolic BP">−5</button>
+              <span class="stepper-val" id="val_sbp">120</span>
+              <button type="button" class="btn-step" data-stepper="sbp" data-delta="5" aria-label="Increase Systolic BP">+5</button>
+            </div>
+          </div>
+
+          <!-- Heart Rate -->
+          <div class="stepper-item">
+            <span class="vital-label">Heart Rate <small>(bpm)</small></span>
+            <div class="stepper-controls">
+              <button type="button" class="btn-step" data-stepper="hr" data-delta="-5" aria-label="Decrease Heart Rate">−5</button>
+              <span class="stepper-val" id="val_hr">78</span>
+              <button type="button" class="btn-step" data-stepper="hr" data-delta="5" aria-label="Increase Heart Rate">+5</button>
+            </div>
+          </div>
+
+          <!-- Temperature -->
+          <div class="stepper-item">
+            <span class="vital-label">Temp <small>(°C)</small></span>
+            <div class="stepper-controls">
+              <button type="button" class="btn-step" data-stepper="temp" data-delta="-0.2" aria-label="Decrease Temp">−</button>
+              <span class="stepper-val" id="val_temp">37.0</span>
+              <button type="button" class="btn-step" data-stepper="temp" data-delta="0.2" aria-label="Increase Temp">+</button>
+            </div>
+          </div>
+
+          <!-- Consciousness AVPU -->
+          <div class="stepper-item avpu-card">
+            <span class="vital-label">Consciousness (AVPU)</span>
+            <div class="avpu-selector" id="avpuGroup">
+              <button type="button" class="avpu-btn active" data-avpu="A">A<br><small>Alert</small></button>
+              <button type="button" class="avpu-btn" data-avpu="V">V<br><small>Voice</small></button>
+              <button type="button" class="avpu-btn" data-avpu="P">P<br><small>Pain</small></button>
+              <button type="button" class="avpu-btn" data-avpu="U">U<br><small>Unresp</small></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <div class="action-dock">
+        <button type="button" class="btn-calculate" id="btnCalculateRoute">
+          <span class="btn-icon">⚡</span>
+          <div class="btn-text-block">
+            <strong class="btn-main-title">Calculate & Dispatch to Nearest Hospital</strong>
+            <span class="btn-sub-title">Calculates optimal facility & transmits GPS route to Driver</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Paramedic Confirmation Summary (Shown after calculating) -->
+      <div class="card calculated-summary-card" id="paramedicSummaryCard" style="display: none;">
+        <div class="summary-badge-row">
+          <span class="badge-success">✓ OPTIMAL DESTINATION RESOLVED</span>
+          <span class="timestamp-sub" id="calcTimestamp">--</span>
+        </div>
+        <div class="summary-hospital-name" id="paramedicTargetHospName">Apollo Trauma Centre</div>
+        <div class="summary-details" id="paramedicTargetDetails">Transit: 8.5 min | Distance: 4.2 km</div>
+
+        <!-- TTDC Clinical Breakdown Grid -->
+        <div class="ttdc-breakdown-grid">
+          <div class="ttdc-box highlight">
+            <span class="ttdc-lbl">TTDC (CARE TIME)</span>
+            <strong class="ttdc-val" id="ttdcVal">11.2 min</strong>
+          </div>
+          <div class="ttdc-box">
+            <span class="ttdc-lbl">DRIVE ETA</span>
+            <strong class="ttdc-val" id="driveEtaVal">7.4 min</strong>
+          </div>
+          <div class="ttdc-box">
+            <span class="ttdc-lbl">ED OFFLOAD WAIT</span>
+            <strong class="ttdc-val" id="offloadWaitVal">3.8 min</strong>
+          </div>
+          <div class="ttdc-box">
+            <span class="ttdc-lbl">SPECIALIST PREP</span>
+            <strong class="ttdc-val" id="specialistPrepVal">0.0 min</strong>
+          </div>
+          <div class="ttdc-box">
+            <span class="ttdc-lbl">ED BEDS AVAIL</span>
+            <strong class="ttdc-val" id="bedsAvailVal">4 Beds</strong>
+          </div>
+          <div class="ttdc-box">
+            <span class="ttdc-lbl">BED CONFIDENCE</span>
+            <strong class="ttdc-val" id="bedConfVal">94%</strong>
+          </div>
+        </div>
+
+        <!-- Clinical Optimization Rationale -->
+        <div class="rationale-box">
+          <div class="rationale-header">
+            <span>🧠 Clinical Optimization Rationale</span>
+          </div>
+          <p class="rationale-text" id="rationaleText">Selected facility provides minimal Total Time to Definitive Care with active specialist team and verified bed capacity.</p>
+        </div>
+
+        <p class="summary-info">Hospital ED pre-alert transmitted via two-way handshake. Live navigation transmitted to <strong>Ambulance Driver</strong>.</p>
+        <button type="button" class="btn-switch-driver" id="btnSwitchToDriver">Open Driver GPS Navigation ➔</button>
+
+        <!-- Alternative Regional Facilities Comparison List -->
+        <div class="alternatives-section">
+          <div class="alternatives-header">
+            <span>Regional Network Ranking</span>
+            <small>Alternative Destinations Evaluated</small>
+          </div>
+          <div class="alternatives-list" id="alternativesList">
+            <!-- Dynamically populated from API rankings -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: AMBULANCE DRIVER CONSOLE (ONLY FOR GPS LOCATION & ROUTE)          -->
+    <!-- ========================================================================= -->
+    <section class="role-screen" id="screenDriver">
+      <div class="screen-header">
+        <div class="screen-title-group">
+          <span class="role-badge driver-badge">DRIVER CONSOLE</span>
+          <h2>GPS Location & Navigation</h2>
+        </div>
+        <div class="gps-live-pill" id="driverGpsPill">
+          <span class="gps-dot"></span> <span id="driverGpsStatusText">GPS READY</span>
+        </div>
+      </div>
+
+      <!-- Ambulance Current GPS Position -->
+      <div class="card driver-gps-card">
+        <div class="gps-card-header">
+          <span class="gps-icon-large">📍</span>
+          <div class="gps-coords-block">
+            <span class="gps-sub-lbl">CURRENT AMBULANCE GPS:</span>
+            <strong class="gps-coords-text" id="driverCurrentCoords">28.6129° N, 77.2295° E</strong>
+            <span class="gps-sub-status" id="driverGpsAccuracy">High Precision • Unit AMB-104</span>
+          </div>
+          <button type="button" class="btn-gps-refresh" id="btnDriverRefreshGps" title="Update Current GPS Location">🔄 Update</button>
+        </div>
+      </div>
+
+      <!-- STATE A: STANDBY (Awaiting calculation from paramedic) -->
+      <div class="card driver-standby-card" id="driverStandbyCard">
+        <div class="standby-icon">⏳</div>
+        <h3>Awaiting Patient Details from Paramedic</h3>
+        <p>The destination hospital location, ETA, and turn-by-turn route will appear here automatically once the paramedic calculates the triage.</p>
+        <div class="standby-hint">
+          <span>Tip: Switch to the <strong>Paramedic</strong> tab to enter patient vitals and calculate destination.</span>
+        </div>
+      </div>
+
+      <!-- STATE B: CALCULATED HOSPITAL DESTINATION & ROUTE (Active after calculation) -->
+      <div class="driver-active-route" id="driverActiveRoute" style="display: none;">
+        
+        <!-- Calculated Destination Hospital Banner -->
+        <div class="card destination-hero-card">
+          <div class="dest-badge-row">
+            <span class="badge-dest">CALCULATED DESTINATION</span>
+            <span class="badge-ed-status" id="driverEdStatus">🟢 ED Pre-Alert Sent</span>
+          </div>
+          <h2 class="dest-hospital-name" id="driverHospName">Apollo Trauma Centre</h2>
+          <div class="dest-hospital-address" id="driverHospAddress">Sarita Vihar, Mathura Road, New Delhi</div>
+          <div class="dest-metrics-grid">
+            <div class="metric-box">
+              <span class="metric-lbl">ESTIMATED ETA</span>
+              <strong class="metric-val highlight" id="driverEtaVal">8.5 min</strong>
+            </div>
+            <div class="metric-box">
+              <span class="metric-lbl">DISTANCE</span>
+              <strong class="metric-val" id="driverDistanceVal">4.2 km</strong>
+            </div>
+            <div class="metric-box">
+              <span class="metric-lbl">FACILITY TYPE</span>
+              <strong class="metric-val" id="driverHospType">Level 1 Trauma</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Turn-by-Turn GPS Navigation Display -->
+        <div class="card navigation-card">
+          <div class="nav-instruction-banner">
+            <span class="nav-turn-icon" id="navTurnIcon">↱</span>
+            <div class="nav-turn-text">
+              <strong id="navMainInstruction">Proceed to Destination Emergency Bay</strong>
+              <span id="navSubInstruction">Priority medical transport corridor</span>
+            </div>
+            <div class="nav-distance-callout" id="navNextTurnDist">350 m</div>
+          </div>
+
+          <!-- Real Interactive Leaflet GPS Route Map -->
+          <div class="map-container">
+            <div id="driverMap" class="driver-map"></div>
+          </div>
+
+          <!-- Driver Navigation Actions -->
+          <div class="driver-actions-row">
+            <button type="button" class="btn-external-maps" id="btnOpenExternalMaps">
+              <span>🗺️ Start Live Turn-by-Turn Navigation (Google Maps)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Emergency Hospital Contact / Radio Info -->
+        <div class="card ed-contact-card">
+          <div class="contact-header">
+            <span>📞 Receiving Emergency Dept Direct Line:</span>
+            <a href="tel:+911126925858" id="driverEdPhoneLink" class="tel-link">
+              <strong id="driverEdPhone">+91-11-2692-5858 (Direct Call)</strong>
+            </a>
+          </div>
+          <div class="contact-status-note">
+            <span>Hospital Status: </span>
+            <strong id="driverHandshakeStateText">Handshake Confirmed — Resuscitation Bay Reserved</strong>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/assets/mobile/leaflet.js"></script>
+  <script src="/assets/mobile/mobile.js"></script>
+</body>
+</html>

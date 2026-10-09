@@ -1,0 +1,32 @@
+[package]
+name = "vitalroute-hospital-triage"
+version = "1.0.0"
+description = "VitalRoute Hospital Emergency Department Triage HUD"
+authors = ["VitalRoute Team"]
+edition = "2021"
+
+[lib]
+name = "vitalroute_hospital_triage_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[[bin]]
+name = "VitalRoute_Hospital_Triage"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+
+# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

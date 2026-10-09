@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0e13">
+<title>VitalRoute — Confidence-Aware Emergency Destination Orchestration</title>
+<link rel="icon" type="image/svg+xml" href="/assets/icon.svg">
+<link rel="manifest" href="/assets/manifest.webmanifest">
+
+<link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="/assets/styles.css" rel="stylesheet">
+</head>
+<body>
+
+<header class="app">
+  <div class="brand">Vital<em>Route</em>
+    <small>Confidence-Aware Emergency Destination Orchestration · SDG 3</small>
+  </div>
+  <span class="disclaimer">SYNTHETIC SIMULATION — PROTOTYPE DATA</span>
+  <nav class="roles">
+    <button data-role="cockpit" class="active">Paramedic Cockpit</button>
+    <button data-role="hospital">Hospital ER HUD</button>
+    <button data-role="sim">Surge Simulator</button>
+  </nav>
+</header>
+
+<main>
+  <div class="panel" id="panel"></div>
+  <div class="map-wrap">
+    <div id="map"></div>
+    <div class="map-offline" id="mapOffline" hidden>Map tiles unavailable (offline) — decision engine fully operational.</div>
+  </div>
+</main>
+
+<div class="statusbar">
+  <span id="conn" class="conn off">WS: connecting…</span>
+  <span id="clock"></span>
+  <span id="geoStatus"></span>
+  <span style="margin-left:auto">4-Pillar Engine: Freshness F(t)=e^(−λΔt) · TTDC = T<sub>drive</sub>+T<sub>offload</sub>+T<sub>readiness</sub> · Two-Way Handshake</span>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
+<script src="/assets/app.js"></script>
+</body>
+</html>
